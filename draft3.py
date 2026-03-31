@@ -27,7 +27,6 @@ try:
                 EC.element_to_be_clickable((By.XPATH, "//button[@aria-label='Следующая страница']"))
             )
 
-            # պահում ենք հին էլեմենտը
             old_element = elements[0]
 
             next_button.click()
