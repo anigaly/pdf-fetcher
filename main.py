@@ -31,7 +31,7 @@ class ClinrecDownloader:
         response = requests.get(
             self.excel_url,
             headers=self.headers,
-            timeout=(3, 10)
+            timeout=(10, 30)
         )
 
         if response.status_code == 200 and len(response.content) > 1000:
