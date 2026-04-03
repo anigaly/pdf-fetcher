@@ -1,142 +1,114 @@
-import pandas as pd
 import requests
-import os
+import pandas as pd
+import logging
 import time
+from pathlib import Path
 
 
-print("=" * 60)
-print("📥 PDF DOWNLOADER - AUTO READ FROM EXCEL")
-print("=" * 60)
+class ClinrecDownloader:
+    def __init__(
+        self,
+        excel_url: str,
+        pdf_base_url: str,
+        headers: dict,
+        output_dir: Path,
+        excel_file: str,
+        id_column: str = "ID"
+    ):
+        self.excel_url = excel_url
+        self.pdf_base_url = pdf_base_url
+        self.headers = headers
 
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
 
-excel_file = "file.xlsx"
+        self.excel_path = self.output_dir / excel_file
+        self.id_column = id_column
 
+    def download_excel(self):
+        logging.info("Downloading Excel file")
 
-if not os.path.exists(excel_file):
-    print(f"\n❌ ERROR: '{excel_file}' not found!")
-    print(f"📁 Current folder: {os.getcwd()}")
-    print("\n📋 Files in current folder:")
-    for file in os.listdir():
-        print(f"   - {file}")
-    exit()
+        response = requests.get(
+            self.excel_url,
+            headers=self.headers,
+            timeout=(3, 10)
+        )
 
-print(f"\n✅ Found Excel file: {excel_file}")
-
-
-try:
-    df = pd.read_excel(excel_file, engine='openpyxl')
-    print(f"✅ Successfully read Excel file")
-    print(f"📊 Total rows: {len(df)}")
-    print(f"📋 Column names: {list(df.columns)}")
-except Exception as e:
-    print(f"❌ Error reading Excel: {e}")
-    exit()
-
-
-id_column = None
-possible_names = ['ID', 'Id', 'id', '№', 'number', 'identifier']
-
-for col in possible_names:
-    if col in df.columns:
-        id_column = col
-        break
-
-
-if id_column is None:
-    print(f"\n⚠️ 'ID' column not found!")
-    print(f"📋 Available columns: {list(df.columns)}")
-    print(f"💡 Using first column as ID: {df.columns[0]}")
-    id_column = df.columns[0]
-else:
-    print(f"\n✅ Found ID column: {id_column}")
-
-
-ids = df[id_column].dropna().tolist()
-print(f"📋 Total IDs found: {len(ids)}")
-print(f"🔑 First 5 IDs: {ids[:5]}")
-
-if len(ids) == 0:
-    print("❌ No IDs found in Excel file!")
-    exit()
-
-
-PDF_URL = "https://apicr.minzdrav.gov.ru/api.ashx?op=GetClinrecPdf&id="
-
-
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-    "Referer": "https://cr.minzdrav.gov.ru/clin-rec"
-}
-
-os.makedirs("data", exist_ok=True)
-
-
-success = 0
-failed = 0
-total = len(ids)
-
-print(f"\n🚀 Starting download of {total} PDFs...\n")
-
-for index, file_id in enumerate(ids, 1):
-    try:
-
-        file_id = str(file_id).strip()
-
-        if not file_id:
-            print(f"⏭️ {index}/{total}: Empty ID, skipping")
-            continue
-
-
-        url = PDF_URL + file_id
-
-        print(f"📥 {index}/{total}: {file_id}...", end=" ")
-
-
-        response = requests.get(url, headers=headers, timeout=20)
-
-
-        content_type = response.headers.get("Content-Type", "").lower()
-
-        if response.status_code == 200 and "pdf" in content_type:
-
-            file_path = f"data/{file_id}.pdf"
-            with open(file_path, "wb") as f:
+        if response.status_code == 200 and len(response.content) > 1000:
+            with open(self.excel_path, "wb") as f:
                 f.write(response.content)
-            print(f"✅ ({len(response.content)} bytes)")
-            success += 1
-        elif response.status_code == 200:
-
-            print(f"⚠️ HTML response (not PDF)")
-            failed += 1
+            logging.info("Excel downloaded successfully")
         else:
-            print(f"⚠️ HTTP {response.status_code}")
-            failed += 1
+            logging.error(f"Failed to download Excel: {response.status_code}")
+            raise RuntimeError("Excel download failed")
+
+    def get_ids(self):
+        logging.info("Reading Excel file")
+
+        df = pd.read_excel(self.excel_path)
+        logging.info(f"Columns found: {list(df.columns)}")
+
+        if self.id_column not in df.columns:
+            raise ValueError(f"Column '{self.id_column}' not found")
+
+        ids = df[self.id_column].astype(str).tolist()
+        logging.info(f"Total IDs: {len(ids)}")
+
+        return ids
+
+    def download_by_id(self, file_id: str):
+        url = self.pdf_base_url + file_id
+
+        try:
+            response = requests.get(
+                url,
+                headers=self.headers,
+                timeout=(3, 5)
+            )
+
+            if response.status_code == 200 and len(response.content) > 1000:
+                file_path = self.output_dir / f"{file_id}.pdf"
+
+                with open(file_path, "wb") as f:
+                    f.write(response.content)
+
+                logging.info(f"Downloaded {file_id}")
+            else:
+                logging.warning(f"Failed to download {file_id}")
+
+        except Exception as e:
+            logging.error(f"Error downloading {file_id}: {e}")
+
+    def download_all(self):
+        self.download_excel()
+        ids = self.get_ids()
+
+        for file_id in ids:
+            self.download_by_id(file_id)
+            time.sleep(0.5)
 
 
-        time.sleep(0.5)
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s"
+    )
 
-    except requests.exceptions.Timeout:
-        print(f"❌ Timeout")
-        failed += 1
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Network error: {e}")
-        failed += 1
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        failed += 1
+    EXCEL_URL = "https://apicr.minzdrav.gov.ru/api.ashx?op=GetJsonClinrecsFilterV2Excel"
 
+    PDF_BASE_URL = "https://apicr.minzdrav.gov.ru/api.ashx?op=GetClinrecPdf&id="
 
-print("\n" + "=" * 60)
-print("🎉 DOWNLOAD COMPLETE")
-print(f"✅ Successfully downloaded: {success}")
-print(f"❌ Failed: {failed}")
-print(f"📁 Files saved in: {os.path.abspath('data')}")
-print("=" * 60)
+    HEADERS = {
+        "User-Agent": "Mozilla/5.0"
+    }
 
+    downloader = ClinrecDownloader(
+        excel_url=EXCEL_URL,
+        pdf_base_url=PDF_BASE_URL,
+        headers=HEADERS,
+        output_dir=Path("data"),
+        excel_file="data.xlsx",
+        id_column="ID"
+    )
 
-if success > 0:
-    print("\n📄 Downloaded PDFs:")
-    pdf_files = [f for f in os.listdir("data") if f.endswith(".pdf")]
-    for f in sorted(pdf_files):
-        file_size = os.path.getsize(f"data/{f}")
-        print(f"   - {f} ({file_size:,} bytes)")
+    downloader.download_all()
