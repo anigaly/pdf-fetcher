@@ -1,0 +1,11 @@
+{
+  "excel_url": "https://apicr.minzdrav.gov.ru/api.ashx?op=GetJsonClinrecsFilterV2Excel",
+  "pdf_base_url": "https://apicr.minzdrav.gov.ru/api.ashx?op=GetClinrecPdf&id=",
+  "headers": {
+    "User-Agent": "Mozilla/5.0"
+  },
+  "output_dir": "data",
+  "excel_file": "data.xlsx",
+  "id_column": "ID",
+  "delay": 0.5
+}

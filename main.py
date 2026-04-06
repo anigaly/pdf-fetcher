@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import logging
 import time
+import json
 from pathlib import Path
 
 
@@ -13,7 +14,8 @@ class ClinrecDownloader:
         headers: dict,
         output_dir: Path,
         excel_file: str,
-        id_column: str = "ID"
+        id_column: str = "ID",
+        delay: float = 0.5
     ):
         self.excel_url = excel_url
         self.pdf_base_url = pdf_base_url
@@ -24,23 +26,31 @@ class ClinrecDownloader:
 
         self.excel_path = self.output_dir / excel_file
         self.id_column = id_column
+        self.delay = delay
 
     def download_excel(self):
         logging.info("Downloading Excel file")
 
-        response = requests.get(
-            self.excel_url,
-            headers=self.headers,
-            timeout=(10, 30)
-        )
+        for attempt in range(3):
+            try:
+                response = requests.get(
+                    self.excel_url,
+                    headers=self.headers,
+                    timeout=(10, 60)
+                )
 
-        if response.status_code == 200 and len(response.content) > 1000:
-            with open(self.excel_path, "wb") as f:
-                f.write(response.content)
-            logging.info("Excel downloaded successfully")
-        else:
-            logging.error(f"Failed to download Excel: {response.status_code}")
-            raise RuntimeError("Excel download failed")
+                if response.status_code == 200:
+                    with open(self.excel_path, "wb") as f:
+                        f.write(response.content)
+
+                    logging.info("Excel downloaded successfully")
+                    return
+
+            except Exception as e:
+                logging.warning(f"Attempt {attempt+1} failed: {e}")
+                time.sleep(2)
+
+        raise Exception("Excel download failed after retries")
 
     def get_ids(self):
         logging.info("Reading Excel file")
@@ -63,7 +73,7 @@ class ClinrecDownloader:
             response = requests.get(
                 url,
                 headers=self.headers,
-                timeout=(3, 5)
+                timeout=(5, 30)
             )
 
             if response.status_code == 200 and len(response.content) > 1000:
@@ -85,7 +95,7 @@ class ClinrecDownloader:
 
         for file_id in ids:
             self.download_by_id(file_id)
-            time.sleep(0.5)
+            time.sleep(self.delay)
 
 
 if __name__ == "__main__":
@@ -94,21 +104,17 @@ if __name__ == "__main__":
         format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    EXCEL_URL = "https://apicr.minzdrav.gov.ru/api.ashx?op=GetJsonClinrecsFilterV2Excel"
-
-    PDF_BASE_URL = "https://apicr.minzdrav.gov.ru/api.ashx?op=GetClinrecPdf&id="
-
-    HEADERS = {
-        "User-Agent": "Mozilla/5.0"
-    }
+    with open("config.json", "r") as f:
+        config = json.load(f)
 
     downloader = ClinrecDownloader(
-        excel_url=EXCEL_URL,
-        pdf_base_url=PDF_BASE_URL,
-        headers=HEADERS,
-        output_dir=Path("data"),
-        excel_file="data.xlsx",
-        id_column="ID"
+        excel_url=config["excel_url"],
+        pdf_base_url=config["pdf_base_url"],
+        headers=config["headers"],
+        output_dir=Path(config["output_dir"]),
+        excel_file=config["excel_file"],
+        id_column=config["id_column"],
+        delay=config["delay"]
     )
 
     downloader.download_all()
