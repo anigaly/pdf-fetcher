@@ -1,0 +1,21 @@
+# This file contains values from Cookiecutter
+
+default_context:
+  project_name: "pdf-fetcher"
+  project_slug: "pdf_fetcher"
+  project_description: "Downloads clinical recommendation PDFs using IDs from an Excel file."
+  username: "ani-galstyan"
+  email: "anigaly2@gmail.com"
+  vcs_remote_type: "github"
+  minimal_python_version: "3.13"
+  version: "0.1.0"
+  line_length: "120"
+  package_manager: "poetry"
+
+  python_linter: "ruff"
+  python_formatter: "ruff"
+  python_type_checker: "mypy"
+
+  include_cli_example: "n"
+  include_docker_sample: "n"
+  include_notebooks_sample: "y"
