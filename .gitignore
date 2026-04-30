@@ -1,3 +1,5 @@
 draft*
 .idea/
+*.pdf
+*.pyc
 
