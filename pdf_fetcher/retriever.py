@@ -1,18 +1,22 @@
 from qdrant_client import QdrantClient
-from sentence_transformers import SentenceTransformer
+from pdf_fetcher.embedding_client import EmbeddingClient
 
 
 class QdrantRetriever:
     def __init__(self):
         self.collection_name = "pdf_rag"
-        self.client = QdrantClient(host="localhost", port=6333)
-        self.model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-    def search(self, question: str, limit: int = 3):
-        query_vector = self.model.encode(question).tolist()
+        self.client = QdrantClient(path="data/qdrant")
 
-        return self.client.search(
+        self.embedder = EmbeddingClient()
+
+    def search(self, question: str, limit: int = 20):
+        query_vector = self.embedder.embed(question)
+
+        results = self.client.query_points(
             collection_name=self.collection_name,
-            query_vector=query_vector,
+            query=query_vector,
             limit=limit,
         )
+
+        return results.points

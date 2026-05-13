@@ -1,5 +1,13 @@
 draft*
 .idea/
 *.pdf
+.venv/
+__pycache__/
 *.pyc
 
+data/qdrant/
+data/screenshots/
+data/indexed_files.json
+
+.env
+.DS_Store
