@@ -4,17 +4,27 @@ import fitz
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 def remove_unwanted_sections(text: str) -> str:
+
     patterns = [
-        r"(?im)^\s*список литературы\s*$",
-        r"(?im)^\s*литература\s*$",
-        r"(?im)^\s*список авторов\s*$",
-        r"(?im)^\s*авторы\s*$",
-        r"(?im)^\s*библиографический список\s*$",
-        r"(?im)^\s*references\s*$",
+
+        # Remove references / bibliography sections
+        r"(?is)^\s*(список литературы|литература|библиографический список|references)\s*\n.*?(?=^\s*приложение\s+[А-ЯA-Z0-9]|$)",
+
+        # Remove authors / working group appendix
+        r"(?is)^\s*приложение\s+А1\..*?(?=^\s*приложение\s+[А-ЯA-Z0-9]|$)",
+
+        # Remove standalone author sections
+        r"(?is)^\s*(список авторов|авторы|состав рабочей группы).*$",
+
     ]
 
     for pattern in patterns:
-        text = re.sub(pattern, " ", text)
+        text = re.sub(
+            pattern,
+            " ",
+            text,
+            flags=re.MULTILINE,
+        )
 
     return text
 
@@ -141,4 +151,3 @@ def extract_chunks_from_pdf(pdf_path: Path) -> list[dict]:
             )
 
     return chunks
-
