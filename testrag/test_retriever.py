@@ -8,7 +8,10 @@ from pdf_fetcher.retriever import QdrantRetriever
 
 
 # Create retriever
-retriever = QdrantRetriever()
+def test_retriever():
+    retriever = QdrantRetriever()
+    result = retriever.search("test query")
+    assert result is not None
 
 
 # Test medical question
