@@ -35,12 +35,11 @@ def remove_unwanted_sections(text: str) -> str:
         Text with unwanted sections removed.
     """
     patterns = [
-        # Remove bibliography and references sections
-        r"(?is)^\s*(список литературы|литература|библиографический список|references)\s*\n.*?(?=^\s*приложение\s+[А-ЯA-Z0-9]|$)",
-        # Remove author appendix (Appendix A1)
-        r"(?is)^\s*приложение\s+А1\..*?(?=^\s*приложение\s+[А-ЯA-Z0-9]|$)",
-        # Remove standalone author headings
-        r"(?is)^\s*(список авторов|авторы|состав рабочей группы).*$",
+
+        # Remove bibliography section up to Appendix A2
+        r"(?is)^\s*(список литературы|литература|библиографический список|references)\s*\n.*?(?=^\s*приложение\s+А2\b)",
+        # Remove Appendix A1 completely
+        r"(?is)^\s*приложение\s+А1\b.*?(?=^\s*приложение\s+А2\b)",
     ]
 
     for pattern in patterns:
@@ -107,8 +106,8 @@ def clean_text(text: str) -> str:
 
 def split_text(
     text: str,
-    chunk_size: int = 2500,
-    overlap: int = 500,
+    chunk_size: int = 1200,
+    overlap: int = 200,
 ) -> list[str]:
     """
     Split text into overlapping chunks for embedding and retrieval.
@@ -170,6 +169,7 @@ def extract_chunks_from_pdf(pdf_path: Path) -> list[dict]:
 
     # Split cleaned text into chunks
     for index, chunk_text in enumerate(split_text(text)):
+
         chunk_text = chunk_text.strip()
 
         if not chunk_text:
@@ -184,12 +184,12 @@ def extract_chunks_from_pdf(pdf_path: Path) -> list[dict]:
                 "text": chunk_text,
                 "file": pdf_path.name,
                 "path": str(pdf_path),
-                "chunk_index": index,
+                "chunk_index": index,  # Use index here
+                "page": index + 1  # Temporary placeholder so RAG doesn't crash looking for "page"
             }
         )
 
     return chunks
-
 
 def get_clean_text_from_pdf(pdf_path: Path) -> str:
     """

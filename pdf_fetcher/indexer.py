@@ -75,70 +75,41 @@ class QdrantIndexer:
         )
         print(f"Collection created: {self.collection_name}")
 
-    def index_pdf_folder(self, pdf_dir: Path):
+    def index_specific_pdfs(self, pdf_paths: list[Path]):
         """
-        Index all approved and non-processed PDF files from the specified directory.
-
-        The process follows these steps:
-        1. Loads the allowed PDF filenames from an Excel registry.
-        2. Loads the list of previously indexed files from a JSON registry.
-        3. Iterates through all PDF files in the target directory.
-        4. Skips files that are either not allowed or already processed.
-        5. Extracts text chunks from eligible PDFs.
-        6. Generates vector embeddings for each text chunk.
-        7. Batch-upserts the vector points along with their text payload into Qdrant.
-        8. Updates the local JSON registry to track progress.
-
-        Args:
-            pdf_dir (Path): The directory path containing the PDF documents to index.
-
-        Returns:
-            None
+        Index only the specific PDF files provided in the list.
         """
-        # Load the whitelist of approved filenames
-        allowed_files = get_allowed_pdf_files(Path("data/registry.xlsx"))
         indexed_file_path = Path("data/indexed_files.json")
 
-        # Load already indexed files to avoid duplicate work
+        # Load already indexed files
         if indexed_file_path.exists():
             with open(indexed_file_path, "r", encoding="utf-8") as f:
                 indexed_files = set(json.load(f))
         else:
             indexed_files = set()
 
-        # Iterate through all PDF files in the provided directory
-        for pdf_path in pdf_dir.glob("*.pdf"):
-
-            # Skip the file if it's not present in the allowed Excel whitelist
-            if pdf_path.name not in allowed_files:
-                print(f"Skipping not allowed: {pdf_path.name}")
+        # Iterate only through the provided files
+        for pdf_path in pdf_paths:
+            if not pdf_path.exists():
+                print(f"File does not exist: {pdf_path}")
                 continue
 
-            # Skip the file if it has already been processed in a previous run
             if pdf_path.name in indexed_files:
                 print(f"Already indexed: {pdf_path.name}")
                 continue
 
             print(f"\nProcessing: {pdf_path.name}")
-
-            # Parse the PDF and extract text chunks with metadata
             chunks = extract_chunks_from_pdf(pdf_path)
-            print(f"Chunks extracted: {len(chunks)}")
+            print(f"Extracted {len(chunks)} chunks")
 
-            # If the PDF is empty or unreadable, mark it as processed and skip
             if not chunks:
                 indexed_files.add(pdf_path.name)
                 self._save_indexed_files(indexed_file_path, indexed_files)
                 continue
 
             points = []
-
-            # Generate embeddings and construct Qdrant PointStructs
             for chunk in chunks:
-                # Convert text chunk into a high-dimensional vector
                 vector = self.embedder.embed(chunk["text"])
-
-                # Create a database point with a unique UUID, vector, and text payload
                 points.append(
                     PointStruct(
                         id=str(uuid4()),
@@ -147,18 +118,16 @@ class QdrantIndexer:
                     )
                 )
 
-            # Bulk upsert all generated vector points into the Qdrant collection
+            # Upload vectors to Qdrant database
             self.client.upsert(
                 collection_name=self.collection_name,
                 points=points,
             )
 
-            # Update the registry file to record successful indexing
+            # Save progress to the indexed files list
             indexed_files.add(pdf_path.name)
             self._save_indexed_files(indexed_file_path, indexed_files)
-
-            print(f"Saved: {pdf_path.name}")
-
+            print(f"Successfully saved to database: {pdf_path.name}")
     def _save_indexed_files(self, file_path: Path, indexed_files: set):
         """
         Save the updated set of indexed files back to the JSON registry.

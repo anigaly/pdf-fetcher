@@ -53,7 +53,7 @@ class PDFRAG:
         # Generate and save a screenshot of the matching PDF page
         screenshot_path = save_page_screenshot(
             pdf_path=Path(best["path"]),  # Full path to the PDF file
-            page_number=best["page"],    # PDF page number
+            page_number=best.get("page", 0), # If "page" is missing, it defaults to 0 instead of crashing
             output_path=Path("data/screenshots")
             / f"{best['file']}_page_{best['page']}.png",
         )
