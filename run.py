@@ -9,15 +9,11 @@ indexer = QdrantIndexer()
 # 2. Recreate collection only when you want to re-index from scratch
 indexer.create_collection()
 
-# 3. Define the specific list of PDFs to be indexed
-specific_pdfs = [
-    Path("data/pdfs/637_2.pdf"),
-    Path("data/pdfs/289_2.pdf"),
-    Path("data/pdfs/331_2.pdf"),
-]
+# 3. Define the path to your PDFs folder
+pdf_directory = Path("data/pdfs")
 
-# 4. Index only the specified PDF files instead of the whole folder
-indexer.index_specific_pdfs(specific_pdfs)
+# 4. FIXED: Call the updated universal function instead of index_pdf_folder
+indexer.index_specific_pdfs(pdf_directory)
 
 # 5. Close the indexer client connection safely
 indexer.client.close()
@@ -32,10 +28,10 @@ question = input("Type question here: ")
 result = rag.ask(question)
 
 # 9. Print the generated natural language response from the LLM
-print("\nAnswer")
+print("\nAnswer:")
 print(result["answer"])
 
-# 10. Print formatted metadata references with exact file name, page, and similarity score
+# 10. Print formatted metadata references
 print("\nSources:")
 for source in result["sources"]:
     print(
@@ -45,5 +41,5 @@ for source in result["sources"]:
     )
 
 # 11. Print the file path to the generated page screenshot
-print("\nSCREENSHOT")
+print("\nSCREENSHOT:")
 print(result["screenshot"])

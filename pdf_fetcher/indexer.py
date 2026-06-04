@@ -75,10 +75,16 @@ class QdrantIndexer:
         )
         print(f"Collection created: {self.collection_name}")
 
-    def index_specific_pdfs(self, pdf_paths: list[Path]):
+    def index_specific_pdfs(self, pdf_paths: list[Path] | Path):
         """
-        Index only the specific PDF files provided in the list.
+        Index PDF files. Accepts either a list of specific file paths or a single
+        directory path. If a directory path is given, it extracts all PDF files from it.
         """
+        # --- FIXED: Check if the input is a single directory path ---
+        if isinstance(pdf_paths, Path) and pdf_paths.is_dir():
+            print(f"Directory detected. Scanning for all PDFs in: {pdf_paths}")
+            pdf_paths = list(pdf_paths.glob("*.pdf"))
+
         indexed_file_path = Path("data/indexed_files.json")
 
         # Load already indexed files
@@ -88,7 +94,7 @@ class QdrantIndexer:
         else:
             indexed_files = set()
 
-        # Iterate only through the provided files
+        # Iterate through the provided files
         for pdf_path in pdf_paths:
             if not pdf_path.exists():
                 print(f"File does not exist: {pdf_path}")
@@ -109,14 +115,22 @@ class QdrantIndexer:
 
             points = []
             for chunk in chunks:
-                vector = self.embedder.embed(chunk["text"])
-                points.append(
-                    PointStruct(
-                        id=str(uuid4()),
-                        vector=vector,
-                        payload=chunk,
+                try:
+                    vector = self.embedder.embed(chunk["text"])
+                    points.append(
+                        PointStruct(
+                            id=str(uuid4()),
+                            vector=vector,
+                            payload=chunk,
+                        )
                     )
-                )
+                except Exception as e:
+                    print(f"Embedding failed for a chunk in {pdf_path.name}: {e}")
+                    continue
+
+            if not points:
+                print(f"No valid chunks to upload for: {pdf_path.name}")
+                continue
 
             # Upload vectors to Qdrant database
             self.client.upsert(
@@ -128,6 +142,7 @@ class QdrantIndexer:
             indexed_files.add(pdf_path.name)
             self._save_indexed_files(indexed_file_path, indexed_files)
             print(f"Successfully saved to database: {pdf_path.name}")
+
     def _save_indexed_files(self, file_path: Path, indexed_files: set):
         """
         Save the updated set of indexed files back to the JSON registry.

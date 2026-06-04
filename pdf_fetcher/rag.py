@@ -1,5 +1,4 @@
 from pathlib import Path
-
 # Import the retriever class used for searching relevant chunks in Qdrant
 from pdf_fetcher.retriever import QdrantRetriever
 
@@ -20,6 +19,7 @@ class PDFRAG:
         Initialize the retriever object.
         """
         self.retriever = QdrantRetriever()
+
 
     def ask(self, question: str) -> dict:
         """
@@ -46,6 +46,10 @@ class PDFRAG:
 
         # Keep only the top 5 most relevant results
         top_results = results[:5]
+        context = "\n\n".join(
+            result.payload["text"]
+            for result in top_results
+        )
 
         # Get payload data from the best result
         best = top_results[0].payload
