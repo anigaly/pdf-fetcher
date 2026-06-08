@@ -1,4 +1,9 @@
+from openai import OpenAI
 from pathlib import Path
+from config import OPENAI_API_KEY, OPENAI_BASE_URL
+
+
+
 # Import the retriever class used for searching relevant chunks in Qdrant
 from pdf_fetcher.retriever import QdrantRetriever
 
@@ -18,8 +23,13 @@ class PDFRAG:
         """
         Initialize the retriever object.
         """
-        self.retriever = QdrantRetriever()
+        self.client = OpenAI(
+            api_key=OPENAI_API_KEY,
+            base_url=OPENAI_BASE_URL,
+        )
 
+        self.retriever = QdrantRetriever()
+        print("Retriever initialized")
 
     def ask(self, question: str) -> dict:
         """
@@ -62,8 +72,34 @@ class PDFRAG:
             / f"{best['file']}_page_{best['page']}.png",
         )
 
-        # Use the text of the best result as the answer
-        answer = top_results[0].payload["text"]
+        prompt = f"""
+        You are a medical assistant.
+
+        Answer the user's question using ONLY the provided context.
+
+        If the answer is not found in the context, say so.
+
+        Context:
+        {context}
+
+        Question:
+        {question}
+
+        Answer:
+        """
+
+        response = self.client.chat.completions.create(
+            model="Qwen3.5-35B-A3B",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            temperature=0.1,
+        )
+
+        answer = response.choices[0].message.content
 
         # Build a list of source metadata
         sources = [

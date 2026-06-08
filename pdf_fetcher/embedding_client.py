@@ -13,7 +13,7 @@ class EmbeddingClient:
                 response = requests.post(
                     self.url,
                     json={"inputs": [text]},
-                    timeout=120,
+                    timeout=90,
                 )
 
                 response.raise_for_status()
