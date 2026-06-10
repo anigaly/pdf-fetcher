@@ -38,8 +38,7 @@ def remove_unwanted_sections(text: str) -> str:
 
         # Remove bibliography section up to Appendix A2
         r"(?is)^\s*(список литературы|литература|библиографический список|references)\s*\n.*?(?=^\s*приложение\s+А2\b)",
-        # Remove Appendix A1 completely
-        r"(?is)^\s*приложение\s+А1\b.*?(?=^\s*приложение\s+А2\b)",
+
     ]
 
     for pattern in patterns:
@@ -191,24 +190,3 @@ def extract_chunks_from_pdf(pdf_path: Path) -> list[dict]:
 
     return chunks
 
-def get_clean_text_from_pdf(pdf_path: Path) -> str:
-    """
-    Extract text from a PDF, remove unwanted sections (bibliography, authors),
-    and return a single cleaned and normalized text string without splitting.
-
-    Args:
-        pdf_path: Path to the PDF file.
-
-    Returns:
-        Cleaned document text as a single string.
-    """
-    # 1. Extract the full raw text from the document
-    text = extract_document_text(pdf_path)
-
-    # 2. Remove bibliography, TOC, and author-related sections
-    text = remove_unwanted_sections(text)
-
-    # 3. Clean text from metadata (URLs, emails, citations) and normalize whitespace
-    text = clean_text(text)
-
-    return text

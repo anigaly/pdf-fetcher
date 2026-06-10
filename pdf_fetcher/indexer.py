@@ -1,4 +1,3 @@
-import collections
 import json
 from pathlib import Path
 from uuid import uuid4
@@ -7,7 +6,6 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 
 from pdf_fetcher.extractor import extract_chunks_from_pdf
-from pdf_fetcher.file_filter import get_allowed_pdf_files
 from pdf_fetcher.embedding_client import EmbeddingClient
 
 

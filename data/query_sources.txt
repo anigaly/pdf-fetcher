@@ -1,0 +1,14 @@
+Question: Когда проводится профилактика аспирином?
+File: 722_2.pdf | Page: 42 | Score: 0.6463
+File: 550_3.pdf | Page: 112 | Score: 0.6421
+File: 715_2.pdf | Page: 256 | Score: 0.6238
+File: 715_2.pdf | Page: 255 | Score: 0.6237
+File: 749_2.pdf | Page: 102 | Score: 0.6168
+--------------------------------------------------
+Question: Когда проводится профилактика аспирином?
+File: 722_2.pdf | Page: 42 | Score: 0.6463
+File: 550_3.pdf | Page: 112 | Score: 0.6421
+File: 715_2.pdf | Page: 256 | Score: 0.6238
+File: 715_2.pdf | Page: 255 | Score: 0.6237
+File: 749_2.pdf | Page: 102 | Score: 0.6168
+--------------------------------------------------

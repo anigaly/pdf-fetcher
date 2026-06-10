@@ -61,16 +61,9 @@ class PDFRAG:
             for result in top_results
         )
 
-        # Get payload data from the best result
-        best = top_results[0].payload
 
-        # Generate and save a screenshot of the matching PDF page
-        screenshot_path = save_page_screenshot(
-            pdf_path=Path(best["path"]),  # Full path to the PDF file
-            page_number=best.get("page", 0), # If "page" is missing, it defaults to 0 instead of crashing
-            output_path=Path("data/screenshots")
-            / f"{best['file']}_page_{best['page']}.png",
-        )
+
+
 
         prompt = f"""
         You are a medical assistant.
@@ -99,6 +92,21 @@ class PDFRAG:
             temperature=0.1,
         )
 
+        log_file = Path("query_sources.txt")
+
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(f"Question: {question}\n")
+
+            for result in top_results:
+                f.write(
+                    f"File: {result.payload['file']} | "
+                    f"Page: {result.payload['page']} | "
+                    f"Score: {result.score:.4f}\n"
+                )
+
+            f.write("-" * 50 + "\n")
+
+
         answer = response.choices[0].message.content
 
         # Build a list of source metadata
@@ -115,5 +123,4 @@ class PDFRAG:
         return {
             "answer": answer,
             "sources": sources,
-            "screenshot": str(screenshot_path),
         }

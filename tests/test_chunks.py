@@ -52,12 +52,12 @@ def split_text_smart(text: str) -> list[str]:
 
 # --- MAIN EXECUTION ---
 pdfs = [
-    Path("data/pdfs/637_2.pdf"),
-    Path("data/pdfs/289_2.pdf"),
-    Path("data/pdfs/331_2.pdf"),
+    Path("../data/pdfs/637_2.pdf"),
+    Path("../data/pdfs/289_2.pdf"),
+    Path("../data/pdfs/331_2.pdf"),
 ]
 
-output_file = Path("readable_chunks.txt")
+output_file = Path("../readable_chunks.txt")
 
 with open(output_file, "w", encoding="utf-8") as f:
     for pdf_path in pdfs:

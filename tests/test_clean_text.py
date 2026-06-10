@@ -7,13 +7,13 @@ from pdf_fetcher.extractor import (
 
 # Define the paths to the source PDF files
 pdfs = [
-    Path("data/pdfs/1_4.pdf"),
-    Path("data/pdfs/4_2.pdf"),
-    Path("data/pdfs/7_2.pdf"),
+    Path("../data/pdfs/1_4.pdf"),
+    Path("../data/pdfs/4_2.pdf"),
+    Path("../data/pdfs/7_2.pdf"),
 ]
 
 # Define the output file path (will be created in the root directory)
-output_file = Path("clean_text.txt")
+output_file = Path("../clean_text.txt")
 
 # Open the file in write mode with UTF-8 encoding for proper Cyrillic support
 with open(output_file, "w", encoding="utf-8") as f:

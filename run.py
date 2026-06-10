@@ -54,8 +54,7 @@ while True:
         )
 
     # 11. Print the localized absolute path to the generated context page screenshot
-    print("\nSCREENSHOT:")
-    print(result["screenshot"])
+
 
     # Visual separator block to distinguish between consecutive questions
     print("\n" + "=" * 80 + "\n")
